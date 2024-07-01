@@ -1,7 +1,7 @@
 library(readxl)
 library(tidyverse)
 library(ggplot2)
-library(ggh4x)
+#library(ggh4x)
 library(lemon)
 
 mmP <- 30.97376
@@ -14,7 +14,8 @@ mmTi <- 47.867
 mmMg <- 24.30506
 
 # First import all raw data. The concentrations of P extraction solutions, and the Dryweight data.
-conc_raw <- read_xlsx("input/SequentialExtractions.xlsx")
+conc_raw <- read_xlsx("input/SequentialExtractions.xlsx", sheet = "sediment")
+conc_ferrosorb <- read_xlsx("input/SequentialExtractions.xlsx", sheet = "ferrosorb")
 conc_Bipy_raw <- read_xlsx("input/SequentialExtractionsBipy.xlsx")
 wt_raw <- read_xlsx("input/Dryweight.xlsx")
 times <- read_xlsx("input/timeseries.xlsx")
@@ -50,6 +51,25 @@ porosity <- wt_raw %>%
   group_by(Sample) %>%
   summarise(porosity = mean(Porosity))
 
+#ferrosorb calculations
+
+ferrosorb<- conc_ferrosorb %>%
+  left_join(porosity, by = c("Sample")) %>%
+  mutate(volume = get_volume(Fraction),
+         cont =  case_when( 
+           Element == "P" ~ ((Conc - Blank) * volume) / (Weight * (1 - porosity)),
+           Element == "Fe"~ 1000*(((Conc - Blank) * volume) / (Weight * (1 - porosity)))/mmFe
+           )) %>%
+  select(-Blank) %>% 
+  transform( factor(Fraction, 
+            levels = c("H2O","BD","NaOH")))
+
+ferrosorb_calc <- ferrosorb %>% select(-porosity,-volume) %>% 
+  pivot_wider(names_from = Element, values_from = c(Conc,cont)) %>% 
+  mutate(FeP = cont_Fe/cont_P)
+
+%>% 
+  group_by(Fraction,) %>%  summarise(sd = sd(cont), cont=(mean(cont)), .groups = "drop")
 
 #####1st incubation #####
 conc <- conc_raw %>%
@@ -70,12 +90,7 @@ conc <- conc_raw %>%
   group_by(Time, Fraction, Sample) %>%
   summarise(sd = sd(cont), cont=(mean(cont)), .groups = "drop")
 
-conc$y_pos = NA
-conc$y_pos[conc$Fraction == "H2O"] = conc$cont[conc$Fraction == "H2O"]
-conc$y_pos[conc$Fraction == "BD"] = conc$cont[conc$Fraction == "H2O"] + 
-  conc$cont[conc$Fraction == "BD"]
-conc$y_pos[conc$Fraction == "NaOH"] = conc$y_pos[conc$Fraction == "BD"] + 
-  conc$cont[conc$Fraction == "NaOH"]
+
 # Combine concentration data with porosity and blanks
 # Compute standard deviation for each combination of Time, Fraction, and Sample
 # Plot the sequential extractions with error bars
@@ -137,22 +152,10 @@ group_by( Time,Treatment,Extraction,Fraction,Depth) %>%
 
 test <- conc_Bipy_raw %>% filter(Fraction != "H2O", Time != "ts0", Parameter == "TP")
 
-conc_Bipy$y_pos = NA
-conc_Bipy$y_pos[conc_Bipy$Fraction == "H2O"] = conc_Bipy$cont[conc_Bipy$Fraction == "H2O"]
-
-conc_Bipy$y_pos[conc_Bipy$Fraction == "Bipy"] = conc_Bipy$cont[conc_Bipy$Fraction == "H2O"] + 
-  conc_Bipy$cont[conc_Bipy$Fraction == "Bipy"]
-
-conc_Bipy$y_pos[conc_Bipy$Fraction == "BD"] = conc_Bipy$y_pos[conc_Bipy$Fraction == "Bipy"] + 
-  conc_Bipy$cont[conc_Bipy$Fraction == "BD"]
-conc_Bipy$y_pos[conc_Bipy$Fraction == "NaOH"] = conc_Bipy$y_pos[conc_Bipy$Fraction == "BD"] + 
-  conc_Bipy$cont[conc_Bipy$Fraction == "NaOH"]
-
-
 
 # Labels and colors
-legend_labels <- c("H2O", "BD", "NaOH SRP", "NaOH NRP")
-colors <- list(c("palegreen2", "darkorange2", "cadetblue","coral4"))
+legend_labels <- c("H2O", "BD", "NaOH SRP", "NaOH NRP", "recalcitrant P")
+colors <- list(c("palegreen2", "darkorange2", "cadetblue","coral4","darkgrey"))
 
 legend_labels_Bipy <- c("H2O","Bipy", "BD", "NaOH SRP", "NaOH NRP")
 colors_Bipy <- list(c("palegreen2","red", "darkorange2", "cadetblue","coral4","darkgrey"))
@@ -249,10 +252,10 @@ t0plot <- ggplot( transform( filter(conc_Bipy, Time == "ts0", Fraction %in% frac
 show(t0plot)
 
 
-total_plot <- ggplot( transform( filter(conc_Bipy, Time != "ts0",  Time != "ts2", Extraction != "Bipyridine", Depth != 0 ), 
+total_plot <- ggplot( transform( filter(conc_Bipy, Time != "ts0",  Time != "ts2", Extraction != "Bipyridine", Depth != 0 , Fraction %in% fraction_list), 
                                  Extraction = factor(Extraction, levels = c("Normal", "Bipyridine"), labels = c("extraction", "extraction")),
                    Fraction = factor(Fraction, 
-                                     levels = c("H2O","Bipy","BD","NaOHSRP","NaOHNRP")),
+                                     levels = fraction_list),
                    Time = factor(Time, levels = (c("ts0", "ts1","ts2","ts3")), labels = (c("start", "20 days"," more days","98 days"))),
                    Treatment = factor(Treatment, levels = (c("Start", "Control","Sulfate")))), 
         aes( x=Depth, y = cont, fill = Fraction),

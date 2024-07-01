@@ -21,12 +21,14 @@ conc_raw %>% filter(time== "ts3", Core %in% c("s3","s5"), Depth <= 2000) %>% vie
  legend_names <- c(
    ts0 = "start" ,
    ts1 =  "20 days",
+   ts2 = "62 days",
    ts3 = "98 days"
  )
  
 figure_data <- conc %>% 
-  filter(Depth >= -0, time != "ts2") %>% 
-  transform(Treatment = factor(Treatment, levels = c("s", "o"), labels = c("treatment","control")))
+  filter(Depth >= -0) %>% 
+  transform(Treatment = factor(Treatment, levels = c("s", "o"), labels = c("sulfate treatment","control")),
+            Depth = Depth/10000)
 profiles <- ggplot(  figure_data, 
                      mapping = aes(
                        y = Conc,
@@ -37,13 +39,13 @@ profiles <- ggplot(  figure_data,
   geom_errorbar(
     aes(ymin = Conc - sd, ymax = Conc + sd),
     position = position_dodge(width = 0.01),
-    width = 0.5)+
-  xlab("Depth (um)") +
+    width = 0.05)+
+  xlab("Depth in cm)") +
   scale_x_reverse() +
   coord_flip() +
-  labs(  y = expression(paste("concentration uM")), 
-         x = "Depth in um",
-         title = "dissolved sulfide profiles" ) +
+  labs(  y = expression(paste("concentration ",mu,"M")), 
+         x = "Depth in cm",
+         title = "dissolved sulfide porewater profiles" ) +
   facet_grid(.~ time, labeller = labeller(time = legend_names))+
   theme_bw() +
   theme(      aspect.ratio = 2,
@@ -55,4 +57,5 @@ profiles <- ggplot(  figure_data,
               legend.key.size = unit(1.5, "cm"))
 print(profiles)
 
+ggsave(profiles, file="figures/profiles.png",width = 10, height = 5)
 show(kwaplots)
