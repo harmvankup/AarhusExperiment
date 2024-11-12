@@ -1,0 +1,512 @@
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+View(zone_indices)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:numzones, i]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:numzones, i]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:numzones, i]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:numzones, i]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:num_zones, i]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:num_zones, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+# Split data into zones
+n <- num_zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+match <- matrix(0, nrow = max_zones, ncol = max_zones)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = zone_indices,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = index,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+match <- matrix(0, nrow = max_zones, ncol = max_zones)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = index,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+match <- matrix(0, nrow = max_zones, ncol = max_zones)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = rep(1, length(zone) - 1),
+fn = SSErev,
+f = f_vec[zone],
+index = index,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+dbest <- D[1:num_zones]
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = dbest,
+fn = SSErev,
+f = f_vec[zone],
+index = index,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+D <- rep(0, num_zones)
+dbest <- D[1:num_zones]
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = dbest,
+fn = SSErev,
+f = f_vec[zone],
+index = index,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+match <- matrix(0, nrow = max_zones, ncol = max_zones)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+D <- rep(0, num_zones)
+dbest <- D[1:num_zones]
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = dbest,
+fn = SSErev,
+f = f_vec[zone],
+index = index,
+interpdepth = interp_depth[zone],
+interpCondata = interp_con_data[zone],
+depthdata = depth_data,
+AA = AA[zone],
+BB = BB[zone],
+CC = CC[zone],
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+D <- rep(0, num_zones)
+dbest <- D[1:num_zones]
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = dbest,
+fn = SSErev,
+f = f_vec,
+index = index,
+interpdepth = interp_depth,
+interpCondata = interp_con_data,
+depthdata = depth_data,
+AA = AA,
+BB = BB,
+CC = CC,
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+match <- matrix(0, nrow = max_zones, ncol = max_zones)
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+D <- rep(0, num_zones)
+dbest <- D[1:num_zones]
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = dbest,
+fn = SSErev,
+f = f_vec,
+index = index,
+interpdepth = interp_depth,
+interpCondata = interp_con_data,
+depthdata = depth_data,
+Condata = con_data,
+AA = AA,
+BB = BB,
+CC = CC,
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+for (num_zones in 1:max_zones) {
+# Split data into zones
+n <- num_zones
+D <- rep(0, num_zones)
+dbest <- D[1:num_zones]
+zone_length <- floor(length(interp_depth) / num_zones)
+zone_indices <- split(1:length(interp_depth), ceiling(seq_along(1:length(interp_depth)) / zone_length))
+index <- match[1:n, num_zones]
+# Optimization using Nelder-Mead method for each zone
+for (zone in zone_indices) {
+optim_result <- optim(
+par = dbest,
+fn = SSErev,
+f = f_vec,
+index = index,
+interpdepth = interp_depth,
+interpCondata = interp_con_data,
+depthdata = depth_data,
+Condata = con_data,
+smoothedCondata = smoothed_con_data,
+AA = AA,
+BB = BB,
+CC = CC,
+method = "Nelder-Mead"
+)
+# Calculate SSE for the current optimization
+current_sse <- optim_result$value
+if (current_sse < best_sse) {
+best_sse <- current_sse
+best_num_zones <- num_zones
+}
+}
+}
+View(optim_result)
