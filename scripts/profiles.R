@@ -3,17 +3,20 @@ library(readxl)
 library(tidyverse)
 library(ggplot2)
 
-# First import all raw data. The concentrations of P extraction solutions, and the Dryweight data.
+#### First import all raw data. The concentrations of P extraction solutions, and the Dryweight data. ####
 profiles_sulfide_raw <- read_xlsx("input/Profiles.xlsx", sheet = "Sulfide")
 
 profiles_oxygen_raw <- read_xlsx("input/Profiles.xlsx", sheet = "Oxygen")
 
 correction <- read_xlsx("input/Profiles.xlsx", sheet = "Corrections")
 
+porosity <- read_xlsx("input/Profiles.xlsx", sheet = "Porosity")
+
+#### Calculations ####
 profiles_oxygen <- profiles_oxygen_raw %>% 
   filter(Depth < -3000) %>% 
-  ddply( .(Core, Timestep,Nr), 
-  summarise, Conc = mean(Signal),sd = sd(Signal), n = length(Signal)) %>% 
+  group_by(Core, Timestep,Nr) %>% 
+  summarise( Conc = mean(Signal),sd = sd(Signal), n = length(Signal)) %>% 
   right_join(profiles_oxygen_raw) %>% 
   remove_missing() %>% 
   filter(Core != "O1" | Timestep != "tp1" ) %>% 
@@ -31,6 +34,7 @@ profiles_oxygen_corrected <- profiles_oxygen %>%
   left_join(correction) %>% 
   mutate( Depthcor = Depth-Corr)
 
+#### Statistics, Oxygen ####
 depth_test <- profiles_oxygen_corrected %>% 
  ddply(.(Core, Treatment, Timestep, Nr), 
   summarise,
@@ -76,6 +80,7 @@ profiles_oxygen_test <- ggplot(  profiles_oxygen %>%
 
 (profiles_oxygen_test)
 
+#### Figures Oxygen ####
 profiles_oxygen_figdata <- profiles_oxygen_corrected %>% 
   filter(Core != "Ocontrol", Core!= "Scontrol") %>% 
   ddply(.(Treatment, Depthcor, Timestep) ,
@@ -104,7 +109,7 @@ print(profiles_oxygen_fig)
 ggsave(profiles_oxygen_fig, file="figures/profiles_oxygen.png",width = 20, height = 20)
 ggsave(profiles_oxygen_fig + theme_void(), file="figures/profiles_oxygen_simple.png", width = 10, height = 20)
 
-
+#### Calculations sulfide ####
 profiles_sulfide_raw %>% filter(time== "ts3", Core %in% c("s3","s5"), Depth <= 2000) %>% view()
  profiles_conc <- profiles_sulfide_raw %>% 
    mutate(Treatment = substr(Core,1,1),
@@ -116,7 +121,7 @@ profiles_sulfide_raw %>% filter(time== "ts3", Core %in% c("s3","s5"), Depth <= 2
    group_by(Depth, Treatment, time) %>% 
    summarise(Conc = mean(totsulf),sd = sd(totsulf))
    
-
+#### Figures sulfide ####
  legend_names <- c(
    ts0 = "start" ,
    ts1 =  "19 days",
@@ -159,3 +164,38 @@ print(profiles)
 
 ggsave(profiles, file="figures/profiles.png",width = 10, height = 5)
 show(kwaplots)
+
+#### calculations flux and reaction rates ####
+
+depth_interpolation <-function(time, core, nr){
+
+  concentration_data <-  profiles_oxygen_corrected %>% filter(Timestep == time, Core == core, Nr == nr)
+  porewater_data <- porosity %>% filter(Core == core, Nr == 1)
+fine_depth <- concentration_data$Depthcor/10000
+
+# Interpolate porewater values to the finer grid
+porewater_interpolated <- ifelse(fine_depth < 0, 1, 
+                                 approx(
+  x = porewater_data$Depth,        # Original depths (coarse grid)
+  y = porewater_data$Porosity,    # Porewater values
+  xout = fine_depth,               # Interpolated depths (fine grid)
+  method = "linear",                # Linear interpolation,'
+  rule = 2
+)$y
+)
+
+# Combine into a single data frame
+aligned_data <- data.frame(
+  Depth = fine_depth,
+  Porosity = porewater_interpolated,
+  Biodiffusity = rep(0, length(fine_depth)),
+  Irrigation = rep(0, length(fine_depth)),
+  Concentration = concentration_data$DO
+  
+)
+
+# View the combined data frame
+print(aligned_data)
+}
+
+test <- depth_interpolation("tp1","O2",1)

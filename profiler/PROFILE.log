@@ -1,0 +1,46 @@
+ Name of input file : input/test.inp                                    
+ Name of output file: output/test.out                                   
+
+ Input read from file - the calculation begins.
+
+
+ Zones     SSE   R**2  Zones:  2     3     4     5     6     7
+
+   1 .2457E+04  .9924 ----  .000  .000  .000  .000  .000  .000
+   2 .3043E+03  .9991 ----------  .003  .000  .000  .000  .002
+   3 .2165E+03  .9993 ----------------  .002  .002  .008  .026
+   4 .1490E+03  .9995 ----------------------  .071  .271  .561
+   5 .1304E+03  .9996 ---------------------------- 1.000 1.000
+   6 .1337E+03  .9996 ---------------------------------- 1.000
+   7 .1366E+03  .9996
+
+ The F statistics suggest  4 zones. Choose the number of zones for further
+ calculations:  4
+
+
+ Zones     SSE   R**2  Zones:  3     2     1
+
+   4 .1490E+03  .9995 ----  .078
+   3 .1684E+03  .9995 ----------  .000
+   2 .7959E+03  .9975 ----------------  .000
+   1 .2457E+04  .9924
+
+ The F statistics suggest  3 zones. Choose the number of zones in
+ final result:  3
+
+ The calculation is done -    121352 steady state profiles are tested.
+
+
+ Calculated concentration at top   :  .3294E+03
+ Calculated concentration at bottom:  .2257E+00
+ Calculated flux at top            :  .2052E-01
+ Calculated flux at bottom         :  .7856E-16
+ Depth integration of production   : -.2052E-01
+ Depth integration of irrigation   :  .0000E+00
+
+ Depth integration of production and irrigation in each zone:
+
+                           Zones     Production   Irrigation
+                             1       -.1668E-02    .0000E+00
+                             2       -.1055E-01    .0000E+00
+                             3       -.8298E-02    .0000E+00

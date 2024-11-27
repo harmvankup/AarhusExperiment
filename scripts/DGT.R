@@ -54,7 +54,7 @@ return(t)
 extract_values <- function(dat, dil, DE, GH){
   cali <- dat %>% filter(col == "A" | col == "B") %>% 
     select(1:9) %>% pivot_longer(2:9,names_to = "nr") %>% 
-    ddply(.(nr),  summarise, value = mean(value)) %>% 
+    group_by(nr) %>%   summarise( value = mean(value)) %>% 
     cbind("uM" = c(0,0.5,2.5,5,10,15,20,25))
     
   linear <- lm( cali$value ~ cali$uM )
@@ -64,15 +64,13 @@ extract_values <- function(dat, dil, DE, GH){
   S <- dat %>% select(1:11) %>% 
     filter(col == "D" | col == "E") %>% 
     pivot_longer(2:11,names_to = "nr") %>% 
-    mutate(uM = case_when(col == "D" & nr %in% c(1:5) ~ (0.8*10^(0)*(value-intercept)/(slope*1.8))*dil,
-                          T ~  (0.8*10^(0)*(value-intercept)/(0.5*slope*1.8))*dil))%>% 
-    pull(uM) 
+    mutate(nmcm2 = case_when(col == "D" & nr %in% c(1:5) ~ ((0.8+1.8*0.094)*10^(0)*(value-intercept)*dil/(0.9*slope*1.8)),
+                          T ~  ((0.8+1.8*0.094*0.5)*10^(0)*(value-intercept)*dil/(0.9*0.5*slope*1.8))))%>% pull(nmcm2) 
   O <- dat %>% select(1:11) %>% 
     filter(col == "G" | col == "H") %>% 
     pivot_longer(2:11,names_to = "nr") %>% 
-    mutate(uM = case_when(col == "G" & nr %in% c(1:5) ~ (0.8*10^(0)*(value-intercept)/(slope*1.8))*dil,
-                        T ~  (0.8*10^(0)*(value-intercept)/(0.5*slope*1.8)*dil))) %>% 
-    pull(uM) 
+    mutate(nmcm2 = case_when(col == "G" & nr %in% c(1:5) ~ ((0.8+1.8*0.094)*10^(0)*(value-intercept)/(0.9*slope*1.8))*dil,
+                        T ~  ((0.8+1.8*0.094*0.5)*10^(0)*(value-intercept)/(0.9*0.5*slope*1.8)*dil))) %>% pull(nmcm2) 
   
   
   t <-cbind( S[1:15],  O[1:15]) %>% as.data.frame() 
@@ -92,24 +90,22 @@ P_33 <- mp_data_transform(DGT_33) %>% extract_values(20,"O3","O4")
 DGT_P_table <- cbind(P_1,P_11,P_22,P_33, depth = c(-5,-4,-3,-2,-1,-0.5,0,.5,1,1.5,2,2.5,3,3.5,4))
 
 DGT_P_data <- DGT_P_table %>% 
-  pivot_longer(S1:O4, names_to = "core") %>% 
+  pivot_longer(S1:O4, names_to = "core", values_to = "nmol_p_cm2") %>% 
   filter(!(core == "O3" & depth == 2)) %>% 
   mutate(treatment = substr(core,1,1),
          time = case_when( substr(core,2,2) == "1" ~ 4,
                            substr(core,2,2) == "2" ~ 47,
-                           substr(core,2,2) %in% c("3","4") ~ 81
-         )) %>% 
+                           substr(core,2,2) %in% c("3","4") ~ 81),
+         uM = (nmol_p_cm2*0.094)/(time*24*60*60*5.26*10^(-6)) ,
+         nmol_p_cm2_s = nmol_p_cm2/(time*24*60*60),
+         mol_p_cm2_y = 10^(-9)*nmol_p_cm2/(time/365)
+         ) %>% 
   transform(treatment = factor(treatment, 
                                levels = c("S", "O"), 
                                labels = c("sulfate treatment","control")), 
-            depth = depth)
+            depth = depth) %>% 
+    pivot_longer(cols = c("nmol_p_cm2","uM","nmol_p_cm2_s","mol_p_cm2_y"), names_to = "unit")
 
-DGT_P_test <- filter(DGT_P_data, depth >= 0) %>% 
-ddply(.(core, treatment),  summarise, sd = sd(value), mean = mean(value), test = shapiro.test(value)$p.value) 
-
-aov <- aov(value ~ treatment*time, data = filter(DGT_P_data, depth >= 0) %>% transform(time = factor(time))) 
-
-TukeyHSD(aov)
 
 profiles <- ggplot(  DGT_P_data, 
                      mapping = aes(
@@ -122,32 +118,35 @@ profiles <- ggplot(  DGT_P_data,
   scale_color_manual(values = Treatment_Colors)+
   scale_x_reverse() +
   coord_flip() +
-  labs(  y = expression(paste("concentration ",n,"mol/cm2")), 
+  labs(  y = expression(paste("concentration ",n,"mol/cm"^2)), 
          x = "Depth in cm",
          title = " porewater profiles" ) +
-  facet_grid(.~ time, scales = "free")+
+  facet_grid(time ~ unit, scales = "free")+
   theme_bw() +
-  theme(      aspect.ratio = 2,
+  theme(      aspect.ratio = 1,
               axis.title=element_text(size=10),
               plot.title = element_text(size=20, face="bold", hjust = 0.5) ,
               axis.text=element_text(size=10,angle = 0, hjust = 0.5),
               legend.title = element_text(size = 0),
+              legend.position = "bottom",
               legend.text = element_text(size = 10, face = "bold"),
               legend.key.size = unit(1.5, "cm"))
 print(profiles)
-summary(P_1)
+ggsave("figures/profile_DGT_P_Aarhus.png", plot = profiles, width = 10, height = 10)
 
 
-DGT_Fe_table <- Fe_raw %>% mutate(Conc = case_when(ID %in% c(1:5) ~ 0.8*10^(3)*FeFF/(1*mmFe*1.8),
-                                     T ~   0.8*10^(3)*FeFF/(0.5*mmFe*1.8))) %>% 
-  select(ID, Core, Conc) %>% 
-  pivot_wider(names_from = Core, values_from = Conc) %>% 
+DGT_Fe_table <- Fe_raw %>% mutate(SurfConc = case_when(ID %in% c(1:5) ~ (0.8+1.8*0.094)*10^(3)*FeFF/(0.9*1*mmFe*1.8),
+                                     T ~   (0.8+1.8*0.094*0.5)*10^(3)*FeFF/(0.9*0.5*mmFe*1.8)),
+                                  PwConc = (SurfConc*0.094)/(81*24*60*60*5.32*10^(-6)) ) %>% 
+  select(ID, Core, SurfConc, PwConc) %>% 
+  pivot_wider(names_from = Core, values_from = c(PwConc,SurfConc)) %>% 
   cbind(depth = c(-5,-4,-3,-2,-1,-0.5,0,.5,1,1.5,2,2.5,3,3.5,4))
 
 
 Treatment_names <- c("Sulfate treatment", "Control")
+
 DGT_Fe_data <- DGT_Fe_table %>% 
-  pivot_longer(O4:S4, names_to = "core") %>% 
+  pivot_longer(PwConc_O4:SurfConc_S4, names_to = c("Concentration","core"), values_to = "value", values_drop_na = T,names_sep = "_") %>% 
   mutate(treatment = substr(core,1,1),
          time = case_when( substr(core,2,2) == "1" ~ 4,
                            substr(core,2,2) == "2" ~ 47,
@@ -155,56 +154,21 @@ DGT_Fe_data <- DGT_Fe_table %>%
           depth = case_when(core == "S3" ~ depth + 0.5,
                             core == "S4" ~ depth + 0.5,
                             core == "O3" ~ depth + 0.5,
-                            core == "O4"~ depth + 1)) %>% 
+                            core == "O4"~ depth + 0.5)) %>% 
   transform(treatment = factor(treatment, levels = c("S","O"), labels = Treatment_names))
 
-DGT_Fe_stat_fun <- function(cor){ 
-  DGT_Fe_data %>% 
-  filter(core == cor) %>%  
-  select(value, depth, treatment) 
-}
+DGT_Fe_error <-  DGT_Fe_data %>% group_by(treatment,depth) %>% reframe(diff = diff(value)) %>% 
+group_by(treatment) %>% summarize( meandiff = mean(diff),n = length(diff), RMS = sqrt(sum(diff^2)/(2*n)))
 
-DGT_Fe_mean <- DGT_Fe_stat_fun("O4") %>% 
-  full_join(DGT_Fe_stat_fun("O3"), by = c("depth", "treatment"), suffix = c("_o_4","_o_3") ) %>% 
-  full_join(DGT_Fe_stat_fun("S3"), by = c("depth", "treatment"), suffix = c("_s_3","_s_3") ) %>% 
-  full_join(DGT_Fe_stat_fun("S4"), by = c("depth", "treatment"), suffix = c("_s_3","_s_4") ) %>% 
-  mutate(diff_o = value_o_3-value_o_4,
-         diff_s = value_s_3 - value_s_4,
-         mean_o = (value_o_3+value_o_4)/2,
-         mean_s = (value_s_3+value_s_4)/2) %>% 
-  pivot_longer(cols = c(starts_with("diff"), starts_with("mean"), starts_with("value")),
-               names_to = c("datatype", "treatmentshort","nr"), 
-               names_sep = "_", 
-               values_to = c("value"), 
-               values_drop_na = T) %>% 
-  pivot_wider(names_from = c(datatype,nr), values_from = value)
+DGT_Fe_mean <-  DGT_Fe_data %>% group_by(treatment,depth,Concentration) %>% reframe(conc = mean(value)) 
 
-
-%>% 
-  ddply(.(treatment), summarise, mean = mean(diff), n = length(diff), s = sqrt(sum(diff^2)/(2*n)) )
-
-
-  
-  
-
-%>% 
-filter(core == "O3") %>%  
-  select(valueo4,value., depth, treatment) %>% 
-  
-
-%>% 
-filter(core == "S3") %>%  
-  select(valueo4,valueo3, depth, treatment) %>% 
-  full_join(DGT_Fe_data, by = c("depth", "treatment"), suffix = c("s4","s5") )
-  
-  
 
 Treatment_Colors <- c("#E69F00","#56B4E9")
-Fe_profiles <- ggplot(  DGT_Fe_data, 
+Fe_profiles <- ggplot(  DGT_Fe_mean, 
                      mapping = aes(
-                       y = value,
+                       y = conc,
                        x = depth,
-                       color = treatment, by = core)) +
+                       color = treatment)) +
   geom_line()  +
   geom_point(size = 2) +
   xlab("Depth in cm)") +
@@ -214,13 +178,14 @@ Fe_profiles <- ggplot(  DGT_Fe_data,
   labs(  y = expression(paste("concentration in nmol/cm2")), 
          x = "Depth in cm",
          title = " DGT Fe profile" ) +
-  #facet_grid(.~ time)+
+  facet_grid(.~ Concentration, scales = "free")+
   theme_bw() +
   theme(      aspect.ratio = 2,
               axis.title=element_text(size=10),
               plot.title = element_text(size=20, face="bold", hjust = 0.5) ,
               axis.text=element_text(size=10,angle = 0, hjust = 0.5),
               legend.title = element_text(size = 0),
+              legend.position = "bottom",
               legend.text = element_text(size = 10, face = "bold"),
               legend.key.size = unit(1.5, "cm"))
 print(Fe_profiles)

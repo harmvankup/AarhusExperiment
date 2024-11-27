@@ -162,31 +162,41 @@ kwa <- kwa_raw %>%
   pivot_longer(cols =  Al:Zn, names_to = "Element", values_to = "Conc") %>% 
   mutate(mm = get_mm(Element),
         Total = (0.05*Conc*1000)/(Weight*mm),
-         Element = paste("Cont_Total_",Element, sep = "")) %>% 
-  select(Time,Treatment,Total, Depth, Element) %>% 
+         Element = paste("Total_",Element, sep = "")) %>% 
+  select(Nr,Time,Treatment,Total, Depth, Element) %>% 
   pivot_wider(names_from = Element, values_from = Total) %>% 
-  mutate(Cont_Total_FeP = Cont_Total_Fe/Cont_Total_P,
-         Cont_Total_FeS = Cont_Total_Fe/Cont_Total_S,
-         Cont_Total_SFe = Cont_Total_S/Cont_Total_Fe)
+  mutate(Total_FeP = Total_Fe/Total_P,
+         Total_FeS = Total_Fe/Total_S,
+         Total_SFe = Total_S/Total_Fe)
 
-totalElements <- c("Total_P","Total_S", "Total_Fe", "Total_Ca","Total_Mg","Total_Mn",  "Total_Al","Total_Ti", "Total_FeP", "Total_FeS","Total_SFe")
+totalElements <- c("Total_P","Total_S", "Total_Fe", "Total_Ca","Total_Mg","Total_Mn",  "Total_Al","Total_Ti")
 Elements <- totalElements %>% str_remove("Total_")
 
+kwa_av <- kwa %>% pivot_longer(Total_Al:Total_SFe, names_to = "Parameter", values_to = "Cont") %>% 
+  filter(Time != "ts3" | Treatment != "Control" | Depth != 5.4, # remove outliers
+         Time != "ts3" | Treatment != "Control" | Nr != 2,
+         Time != "ts3" |  Nr != 1,
+         Time != "ts1" | Treatment != "Sulfate" | Nr != 1) %>% 
+  group_by( Time,Treatment,Parameter,Depth) %>%
+  reframe(sd = sd(Cont), n = n(), Cont=(mean(Cont)))  %>% 
+  pivot_wider(names_from = c(Parameter), values_from = c(Cont, sd,n))
 
-kwa_plotdata <- kwa %>% pivot_longer(Total_Al:Total_SFe, names_to = "Parameter", values_to = "Cont") %>% 
-  mutate(Parameter = str_remove(Parameter, "Total_")) %>% 
-  filter(Parameter %in% Elements, Time != "ts0") 
+kwa_plotdata <- kwa_av %>% 
+  pivot_longer(Cont_Total_Al:n_Total_Ti, names_to = c("aspect","Fraction","Parameter"), values_to = "value", values_drop_na = T,names_sep = "_") %>% 
+  pivot_wider(names_from = aspect, values_from = value) %>% filter(Time != "ts0")
 
 plot_kwa <- function(dat,elem,Isumolg = T){
   elem2 <- elem %>% str_remove("Total_")
   plotdat <- dat %>% filter(Parameter %in% elem2) %>% 
     transform( Parameter = factor(Parameter, levels = elem2),
                Treatment = factor(Treatment, levels = c("Start","Sulfate","Control"), labels = Treatment_names),
-               Time = factor(Time, levels = c("ts0","ts1","ts2","ts3"),labels = Time_labels ))
+               Time = factor(Time, levels = c("ts0","ts1","ts2","ts3"),labels = Time_labels )
+               )
   plot <-  ggplot( plotdat, 
                    mapping =  aes( x=Depth, y = Cont, color = Treatment, shape = Treatment)) +
     geom_line()+
     geom_point(size= 2) +
+    #geom_errorbar( aes(ymin = Cont - sd, ymax = Cont + sd), width = 0.5, position = position_dodge(0.2))+
     scale_color_manual(values = Treatment_Colors, name = "treatment")+
     scale_shape_manual(values = c(19,17,15), name = "treatment") +
     coord_flip()+
@@ -212,12 +222,15 @@ plot_kwa <- function(dat,elem,Isumolg = T){
   return(plot)
 }
 
+kwa %>% pivot_longer(Total_Al:Total_SFe, names_to = "Parameter", values_to = "Cont")
 
-kwa_plot1 <- plot_kwa(c("Total_P","Total_S", "Total_Ca","Total_Mg","Total_Mn", "Total_Fe"))
-
-ratio_plot <- plot_kwa(c("Total_FeP", "Total_FeS", "Total_SFe"))
-ggsave(kwa_plot1, file="figures/elements.png",width = 10, height = 5)
+kwa_plot1 <- plot_kwa(kwa_plotdata,
+                      c("Total_P","Total_S", "Total_Ca","Total_Mg","Total_Mn", "Total_Fe"))
+show(kwa_plot1)
+ratio_plot <- plot_kwa(kwa_plotdata,c("Total_FeP", "Total_FeS", "Total_SFe"))
 show(ratio_plot)
+ggsave(kwa_plot1, file="figures/elements.png",width = 10, height = 5)
+
 ggsave(ratio_plot, file="figures/ratio.png",width = 10, height = 5)
 #### Parallel Sequential extractions. ####
 
@@ -301,99 +314,81 @@ conc_test_data <- conc_test_group %>%
   }) %>% 
   ungroup()  # Ungroup at the end if needed
 
-conc_test_wilcox_time <-
+
+extract_test_wilcox_data <-
   conc_extractions  %>% 
-  filter(Treatment != "Start", Extraction == "Normal", Time != "ts2", Depth != 0, Parameter %in% c("SRP","TP"), Depth<5) %>% 
-  select(Parameter,Fraction, Depth, Treatment, Cont, Time) %>% 
-  group_by( Parameter,Fraction, Depth, Treatment)%>% 
+  filter( Extraction == "Normal",  Depth != 0) %>% 
+select(c(Parameter,Fraction, Depth, Treatment, Cont, Time))
+
+
+kwa_all_test_wilcox_data <- kwa %>% pivot_longer(Total_Al:Total_SFe, names_to = "Parameter", values_to = "Cont")
+kwa_av_test_wilcox_data <- kwa_plotdata
+
+conc_test_wilcox <- function(dat,par,test_parameter, sample1,sample2, groups, pairing = F){
+  par <- par
+  dat  %>% 
+  filter(Treatment != "Start", Time != "ts2", Depth != 0, Parameter %in% par, Depth<5) %>% 
+  group_by( across(all_of(groups)))%>%
   do({
     data_group <- . 
     # Perform  test for each group
-    ts1 <- data_group %>% filter(Time == "ts1") %>% pull(Cont)
-    ts3 <- data_group %>% filter(Time == "ts3") %>% pull(Cont)
-    wilcox_result <- wilcox.test(ts1, ts3, exact=F)
+    p1 <- data_group %>% filter({{test_parameter}} == sample1) %>% pull(Cont)
+    p2 <- data_group %>% filter({{test_parameter}} == sample2) %>% pull(Cont)
     
-    signif <- case_when(
-      wilcox_result$p.value<0.001 ~ "***",
-      wilcox_result$p.value<0.01 ~ "**",
-      wilcox_result$p.value<0.05 ~ "*",
-      T ~ "")
+    wilcox_result <- wilcox.test(p1, p2, exact=F, paired = pairing)
+    ttest_result <- t.test(p1, p2, paired = pairing)
+    signif <- case_when(wilcox_result$p.value<0.001 ~ "***",wilcox_result$p.value<0.01 ~ "**", wilcox_result$p.value<0.05 ~ "*", T ~ "")
     # Create a data frame with the results to return
     data.frame(
       n = nrow(.),
       p_value = wilcox_result$p.value,
+      t_test_p = ttest_result$p.value,
       statistic = wilcox_result$statistic,
       #df = wilcox_result$parameter,
       significance = signif,
-      ts1 =length(ts1),
-      ts3 =length(ts3)
+      p1 =length(p1),
+      p2 =length(p2)
     )
   }) 
+}
 
-conc_test_wilcox_treatment <-
-  conc_extractions  %>% 
-  filter(Treatment != "Start", 
-         Extraction == "Normal", 
-         Time != "ts2", Depth != 0, 
-         Parameter %in% c("SRP","TP"), 
-         Depth<5) %>% 
-  select(Parameter,Fraction, Depth, Treatment, Cont, Time) %>% 
-  group_by( Parameter,Fraction, Depth, Time) %>%
-  do({
-    data_group <- . 
-    # Perform  test for each group
-    t1 <- data_group %>% filter(Treatment == "Sulfate") %>% pull(Cont)
-    t3 <- data_group %>% filter(Treatment == "Control") %>% pull(Cont)
-    wilcox_result <- wilcox.test( t3,t1, exact=F, paired =F)
-    stat <- wilcox_result$statistic %>% as.numeric()
-    signif <- case_when(
-      wilcox_result$p.value<0.001 ~ "***",
-      wilcox_result$p.value<0.01 ~ "**",
-      wilcox_result$p.value<0.05 ~ "*",
-      T ~ "")
-    # Create a data frame with the results to return
-    data.frame(
-      n = nrow(.),
-      p_value = wilcox_result$p.value,
-      statistic = stat,
-      #df = wilcox_result$parameter,
-      significance = signif,
-      t1 =length(t1),
-      t3 =length(t3)
-    )
-  }) 
+extract_P_wilcox_time <- conc_test_wilcox(extract_test_wilcox_data, 
+                                              c("SRP","TP"), 
+                                              Time, "ts1","ts3", 
+                                              c("Parameter","Fraction", "Depth", "Treatment"))
+extract_all_P_wilcox_time <- conc_test_wilcox(extract_test_wilcox_data, 
+                                              c("SRP","TP"), 
+                                              Time, "ts1","ts3", 
+                                              c("Parameter","Fraction",  "Treatment"))
 
-conc_test_wilcox_treatment[[7]]
+wilcox_kwa_time <- conc_test_wilcox(kwa_av_test_wilcox_data, 
+                                    Elements, 
+                                    Time, 
+                                    "ts1","ts3", 
+                                    c("Parameter", "Treatment"),
+                                    T)
+wilcox_kwa_treatment <- conc_test_wilcox(kwa_av_test_wilcox_data, 
+                                   Elements, 
+                                    Treatment, 
+                                    "Sulfate","Control", 
+                                    c("Parameter", "Time"),
+                                   T)
 
-conc_extractions  %>% 
-  filter(Treatment == "Sulfate", 
-         Extraction == "Normal", 
-         Time == "ts3",  
-         Parameter %in% c("SRP"), 
-         Fraction == "NaOH",
-         Depth == 0.6) %>% pull(Cont) 
-
-conc_extractions  %>% 
-  filter(Treatment == "Control", 
-         Extraction == "Normal", 
-         Time == "ts3",  
-         Parameter %in% c("SRP"), 
-         Fraction == "NaOH",
-         Depth == 0.6) %>% pull(Cont)
-
-wilcox_result <- wilcox.test(conc_extractions  %>% 
-                               filter(Treatment == "Control", 
-                                      Extraction == "Normal", 
-                                      Time == "ts3",  
-                                      Parameter %in% c("SRP"), 
-                                      Fraction == "NaOH",
-                                      Depth == 0.6) %>% pull(Cont),conc_extractions  %>% 
-                               filter(Treatment == "Sulfate", 
-                                      Extraction == "Normal", 
-                                      Time == "ts3",  
-                                      Parameter %in% c("SRP"), 
-                                      Fraction == "NaOH",
-                                      Depth == 0.6) %>% pull(Cont),exact=F , paired =F)$statistic %>% as.numeric()
+extract_P_wilcox_treatment <-
+  conc_test_wilcox(extract_test_wilcox_data, 
+                   c("SRP","TP"), 
+                   Treatment, 
+                   "Sulfate","Control", 
+                   c("Parameter","Fraction","Depth","Time"), 
+                   F)
+ 
+extract_all_P_wilcox_treatment <-
+  conc_test_wilcox(extract_test_wilcox_data, 
+                   c("SRP","TP"), 
+                   Treatment, 
+                   "Sulfate","Control", 
+                   c("Parameter","Fraction","Time"), 
+                   F)
 
 data <- conc_test_group %>% filter(Parameter == "TP", Fraction == "BD", Depth == 1.8)
 anova_result <- aov(Cont ~ group, data = data)
@@ -433,16 +428,16 @@ conc_data <- conc_extractions %>%
 group_by( Time,Treatment,Extraction,Fraction,Parameter,Depth) %>%
 summarise(sd = sd(Cont), n = n(), Cont=(mean(Cont))) %>% 
 pivot_wider(names_from = c(Fraction,Parameter), values_from = c(Cont, sd,n))  %>% 
-left_join(kwa) %>% 
+left_join(kwa_av) %>% 
   mutate(
     Cont_NE_P = case_when( 
       is.na(Cont_Bipy_TP) ~ Cont_Total_P - Cont_NaOH_TP - Cont_BD_TP-Cont_H2O_SRP,
       T ~ Cont_Total_P- Cont_NaOH_TP - Cont_Bipy_TP - Cont_BD_TP-Cont_H2O_SRP), 
     Cont_NaOH_NRP = Cont_NaOH_TP-Cont_NaOH_SRP,
     sd_NE_P = case_when( 
-      is.na(Cont_Bipy_TP) ~ sqrt( 0#sd_Total_P
+      is.na(Cont_Bipy_TP) ~ sqrt( sd_Total_P^2
       + sd_NaOH_TP^2 + sd_BD_TP^2 + sd_H2O_SRP^2),
-      T ~ sqrt( 0#sd_P
+      T ~ sqrt( sd_Total_P^2
       + sd_NaOH_TP^2 + sd_Bipy_TP^2 + sd_BD_TP^2 + sd_H2O_SRP^2 )),
     sd_NaOH_NRP = sqrt(sd_NaOH_TP^2+sd_NaOH_SRP^2)) %>% 
   pivot_longer(cols= Cont_BD_Fe:sd_NaOH_NRP, names_to = c("aspect","Fraction","Parameter"), values_to = "value", values_drop_na = T,names_sep = "_")%>% 
@@ -579,7 +574,7 @@ total_plot <- ggplot( seq_plot_data,
     mapping = aes( y = Cont, fill = Fraction ),
     stat = "identity", position = position_stack(reverse=TRUE))+
   scale_fill_manual(values = unlist(colors), labels = legend_labels, name = "Extracted Fraction") +
-  geom_errorbar(data = seq_plot_data, aes(ymin = y_pos - sd, ymax = y_pos + sd), width = 0.5, position = position_dodge(0.2))+
+  #geom_errorbar(data = seq_plot_data, aes(ymin = y_pos - sd, ymax = y_pos + sd), width = 0.5, position = position_dodge(0.2))+
   coord_flip()+
   scale_x_reverse() + 
   labs(y = expression(paste("Extracted P (",mu,"mol gDW"^-1,")" )),
