@@ -460,8 +460,7 @@ colors_Bipy <- list(c("palegreen2","red", "darkorange2", "cadetblue","coral4","d
 
 legend_labels_Bipy <- c("H2O","Bipy", "BD", "NaOH SRP", "NaOH NRP", "recalcitrant P")
 
-plotdata <- transform(filter(conc_data, Extraction == "Normal" )) %>% 
-  pivot_wider(names_from = Fraction, values_from = c(Cont, sd, Total))
+#plotdata <- transform(filter(conc_data, Extraction == "Normal" )) %>% pivot_wider(names_from = Fraction, values_from = c(Cont, sd, Total))
 
 #### Bipy plots ####
 
@@ -567,30 +566,140 @@ seq_plot_data$y_pos[seq_plot_data$Fraction == "NaOHNRP"] = seq_plot_data$y_pos[s
 seq_plot_data$y_pos[seq_plot_data$Fraction == "NEP"] = seq_plot_data$y_pos[seq_plot_data$Fraction == "NaOHNRP"] + 
   seq_plot_data$Cont[seq_plot_data$Fraction == "NEP"]
 
-total_plot <- ggplot( seq_plot_data, 
+
+fraction_plot <- function(time, treatment){
+ dat <-  seq_plot_data %>% filter(Time == time, Treatment == treatment)
+total_plot <- ggplot( dat, 
         aes( x=Depth, y = Cont, fill = Fraction),
         scale_x_discrete(position = 'top')) +
   geom_bar(
     mapping = aes( y = Cont, fill = Fraction ),
     stat = "identity", position = position_stack(reverse=TRUE))+
   scale_fill_manual(values = unlist(colors), labels = legend_labels, name = "Extracted Fraction") +
-  #geom_errorbar(data = seq_plot_data, aes(ymin = y_pos - sd, ymax = y_pos + sd), width = 0.5, position = position_dodge(0.2))+
   coord_flip()+
-  scale_x_reverse() + 
-  labs(y = expression(paste("Extracted P (",mu,"mol gDW"^-1,")" )),
+  scale_x_reverse(limits = c(6, 0)) + 
+  labs(y = expression(paste(" P (",mu,"mol gDW"^-1,")" )),
        x = "Depth (cm)"
   ) +
-  facet_grid(Treatment ~ Time, labeller =label_value) +
   ylim(0, 250) +
-  theme_bw()+
+  theme_cowplot()+
+  theme(text = element_text(size = 8),
+        axis.text = element_text(size = 8),
+    legend.position = "none") 
+return(total_plot)
+}
+
+fraction_plot("19 days", "Control") %>% show()
+
+
+fraction_fill_plot <- function(time, treatment){
+  dat <-  seq_plot_data %>% filter(Time == time, Treatment == treatment)
+total_fill_plot <- ggplot( dat, 
+                      aes( x=Depth, y = Cont, fill = Fraction),
+                      scale_x_discrete(position = 'top')) +
+  geom_bar(
+    mapping = aes( y = Cont, fill = Fraction ),
+    stat = "identity", position = position_fill(reverse=TRUE))+
+  scale_fill_manual(values = unlist(colors), labels = legend_labels, name = "Extracted Fraction") +
+  coord_flip()+
+  scale_x_reverse(limits = c(6, 0)) + 
+  labs(y = expression(paste("P (%)" )),
+       x = "Depth (cm)"
+  ) +
+  theme_map()+
+  theme(axis.title.y = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_text(size = 8),
+    legend.position = "none") 
+return(total_fill_plot)
+}
+
+fraction_row <- function(time, treatment){ plot_grid(
+  fraction_plot(time, treatment), fraction_fill_plot(time, treatment),
+  labels = c("", ""),
+  align = "h",
+  axis = "bt",
+  rel_widths = c(3, 1),
+  nrow = 1
+)
+}
+
+
+legends <- 
+  cowplot::get_plot_component(
+    fraction_plot("19 days", "Control") + 
+                                         theme(legend.position = "bottom", 
+                                               legend.box.margin = margin(0, 0, 0, 50)), 
+    "guide-box", return_all = TRUE)
+show(legends[[3]])
+
+Sulfate <- ggdraw() + 
+  draw_label(
+    "Sulfate Treatment",
+    fontface = 'bold',
+    size = 10,
+    x = 0,
+    hjust = 0
+  ) +
   theme(
-    axis.title=element_text(size=20),plot.title = element_text(hjust = 0.5),
-    axis.text=element_text(size=14,angle = 0, hjust = 0.5),
-    legend.title = element_text( size = 20),
-    strip.text = element_text(size=10, face="bold", hjust = 0.5) ,
-    legend.text = element_text(size = 15),
-    legend.key.size = unit(1.3, "cm"),
-    legend.position = "top") 
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 10)
+  )
+Control <- ggdraw() + 
+  draw_label(
+    "Control Treatment",
+    fontface = 'bold',
+    size = 10,
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 10)
+  )
+ts1 <- ggdraw() + 
+  draw_label(
+    "19 days",
+    fontface = 'bold',
+    size = 10,
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 0)
+  )
+ts3 <- ggdraw() + 
+  draw_label(
+    "96 days",
+    fontface = 'bold',
+    size = 10,
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 0)
+  )
+fraction_grid <-  plot_grid( 
+  plot_grid(Sulfate, Control, NULL, ncol=3, rel_widths = c(1,1,0.2) ),
+  plot_grid(
+  fraction_row("19 days", "Sulfate"), fraction_row("19 days", "Control"), ts1, 
+  labels = c("", "",""), nrow = 1,rel_widths = c(1,1,0.2)),
+  plot_grid(
+  fraction_row("96 days", "Sulfate"), fraction_row("96 days", "Control"), ts3,
+  labels = c("", "",""),nrow = 1,rel_widths = c(1,1,0.2)),
+  legends[[3]],
+  rel_heights = c(0.1,1,1,0.1),
+  nrow = 4
+)
+print(fraction_grid)
+ggsave("figures/all_fractions.tiff", plot = fraction_grid, device = "tiff",
+       width = 174, height = 140,  units = "mm", limitsize = FALSE, dpi = 600)
 
 concsum <- conc_extractions %>% 
   filter(Depth<4.5, Treatment != "Start",Fraction != "BipySRP") %>% 
@@ -639,6 +748,6 @@ Psum_Aarhus <-
   
 
 # Display the plot
-print(total_plot)
-ggsave("figures/fraction_total_Aarhus.png", plot = total_plot, width = 12, height = 7)
+
+ggsave("figures/fraction_Aarhus.png", plot = total_plot, width = 12, height = 7)
 ggsave("figures/fraction_t0_Aarhus.png", plot = t0plot, width = 10, height = 5)

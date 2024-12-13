@@ -34,14 +34,30 @@ xrd_stat %>%
   select(Time,Depth,Treatment,Name,NetArea,Relative,Loss) %>% view()
 
 
-  color_box <- tibble(xmin = c(2,0),
+color_box <- tibble(xmin = c(2,0),
                       xmax = c(8,2.5),
                       ymin = c(-Inf,-Inf),
                       ymax = c(Inf,Inf),
                       fill = factor(c("D" ,"S"), levels = c("D","S")),
                       Treatment = factor(c("A","A"),levels = c("A","B","C")))
 
-xrdplot <- ggplot(xrd, 
+xrd_plotdata <- xrd %>% 
+  filter(Time != "t0") %>% 
+  transform(Name = factor(Name, levels = c("[14,796 ° - 15,700 °]", "[47,451 ° - 47,996 °]"), labels = c("Vivianite","Pyrite")))
+
+legend_names <- c(
+  t0 = "start" ,
+  t1 =  "19 days",
+  t2 = "62 days",
+  t3 = "96 days"
+)
+
+label_reflection <- c("[14,796 ° - 15,700 °]", "[47,451 ° - 47,996 °]
+")
+
+Treatment_Colors <- c("#E69F00","#56B4E9")
+
+xrdplot <- ggplot(xrd_plotdata, 
                   mapping = aes(
                     y = NetArea,
                     x = Depth,
@@ -51,12 +67,14 @@ xrdplot <- ggplot(xrd,
   geom_point(size = 2) +
   #geom_errorbar(aes(ymin = meannormarea - sd, ymax = meannormarea + sd), width = .5, position = position_dodge(0.05)) +
   xlab("Depth (cm)") +
+  scale_color_manual(values = Treatment_Colors, name = "treatment",
+                     labels = c("Sulfate", "Control"))+
   scale_x_reverse() +
   scale_y_continuous(
-    name = expression(paste(" rel. peak area"))
+    name = expression(paste(" relative peak area"))
   ) +
   coord_flip() +
-  facet_grid( Time ~Name, scales = "free")+
+  facet_grid( Time ~Name, scales = "free", labeller = labeller(Time = legend_names, Name = c("1","2") ))+
   labs(
     x = "Depth in cm",
     title = "",
@@ -66,8 +84,9 @@ xrdplot <- ggplot(xrd,
   theme_bw(base_size = 8) +
   theme(axis.title = element_text(size = 8),
         plot.title = element_text(size = 8, face = "bold", hjust = 0.5),
-        axis.text = element_text(size = 8, angle = 0, hjust = 0.5))
+        axis.text = element_text(size = 8, angle = 0, hjust = 0.5),
+        legend.position = "bottom")
 show(xrdplot)
 
 ggsave( "figures/XRDplot.tiff", plot = xrdplot, device = "tiff",
-width = 84, height = 84,  units = "mm", limitsize = FALSE, dpi = 600)
+        width = 174, height = 150,  units = "mm", limitsize = FALSE, dpi = 600)

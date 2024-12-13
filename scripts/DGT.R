@@ -107,7 +107,7 @@ DGT_P_data <- DGT_P_table %>%
     pivot_longer(cols = c("nmol_p_cm2","uM","nmol_p_cm2_s","mol_p_cm2_y"), names_to = "unit")
 
 
-profiles <- ggplot(  DGT_P_data, 
+DGT_P_profiles <- ggplot(  DGT_P_data, 
                      mapping = aes(
                        y = value,
                        x = depth,
@@ -131,8 +131,8 @@ profiles <- ggplot(  DGT_P_data,
               legend.position = "bottom",
               legend.text = element_text(size = 10, face = "bold"),
               legend.key.size = unit(1.5, "cm"))
-print(profiles)
-ggsave("figures/profile_DGT_P_Aarhus.png", plot = profiles, width = 10, height = 10)
+print(DGT_P_profiles)
+ggsave("figures/profile_DGT_P_Aarhus.png", plot = DGT_P_profiles, width = 10, height = 10)
 
 
 DGT_Fe_table <- Fe_raw %>% mutate(SurfConc = case_when(ID %in% c(1:5) ~ (0.8+1.8*0.094)*10^(3)*FeFF/(0.9*1*mmFe*1.8),
@@ -160,7 +160,10 @@ DGT_Fe_data <- DGT_Fe_table %>%
 DGT_Fe_error <-  DGT_Fe_data %>% group_by(treatment,depth) %>% reframe(diff = diff(value)) %>% 
 group_by(treatment) %>% summarize( meandiff = mean(diff),n = length(diff), RMS = sqrt(sum(diff^2)/(2*n)))
 
-DGT_Fe_mean <-  DGT_Fe_data %>% group_by(treatment,depth,Concentration) %>% reframe(conc = mean(value)) 
+DGT_Fe_mean <-  DGT_Fe_data %>%
+  group_by(treatment,depth,Concentration) %>% 
+  reframe(conc = mean(value)) %>%
+  filter(Concentration == "SurfConc")
 
 
 Treatment_Colors <- c("#E69F00","#56B4E9")
@@ -173,21 +176,14 @@ Fe_profiles <- ggplot(  DGT_Fe_mean,
   geom_point(size = 2) +
   xlab("Depth in cm)") +
   scale_color_manual(values = Treatment_Colors)+
-  scale_x_reverse() +
+  scale_x_reverse(limits = c(4.5,-0.5)) +
   coord_flip() +
   labs(  y = expression(paste("concentration in nmol/cm2")), 
          x = "Depth in cm",
          title = " DGT Fe profile" ) +
-  facet_grid(.~ Concentration, scales = "free")+
+  #facet_grid(.~ Concentration, scales = "free")+
   theme_bw() +
-  theme(      aspect.ratio = 2,
-              axis.title=element_text(size=10),
-              plot.title = element_text(size=20, face="bold", hjust = 0.5) ,
-              axis.text=element_text(size=10,angle = 0, hjust = 0.5),
-              legend.title = element_text(size = 0),
-              legend.position = "bottom",
-              legend.text = element_text(size = 10, face = "bold"),
-              legend.key.size = unit(1.5, "cm"))
+  theme(      text = element_text(size = 10))
 print(Fe_profiles)
 
 calc <- function(cap,mag,mm){
